@@ -552,24 +552,18 @@
 				drop 		if   cd_mat == 14305704
 				drop 		if   cd_mat == 14334909  & year == 2015 & grade  == 2
 				drop 		if   cd_mat == 15685071  & year == 2015 & grade  == 3 & type_program == 1
-
 				drop 		if   cd_mat == 2018080 & year ==2008 & grade == 2 & status == 3
 				drop 		if   cd_mat == 3382028
 				drop 		if   cd_mat == 12932868 & year ==2012 & grade == 1 & status == 5
 				drop	 	if   cd_mat == 15675149 & year == 2015 & type_program == 2
-
-								
-				/*				
-				drop 		if   cd_mat == 11612460  & year == 2013 & grade  == 3
-				drop 		if   cd_mat == 15685071  & year == 2015 & grade  == 3
-				drop	 	if   cd_mat == 14291940  | cd_mat == 14305704
 				drop		if   cd_mat == 14070731 & year == 2014 & grade== 2
-				*/
-				
+				drop	 	if   cd_mat == 14291940	
 				sort 		 	 cd_mat year
 				
+				
+				
 				**
-				*Mesmo ano, mesmo programa, mesma escola, mesmo status, mesma serie
+				*Checking if we still have duplicates
 				* ------------------------------------------------------------------------------------------------------------------------------------------------- *
 				sort cd_mat year
 				drop tag max_tag
@@ -697,17 +691,13 @@
 				drop if max_erro == 1
 				
 				//pode ser claramente um erro de preenchimento de turma, ou que de fato o aluno "regrediu" um ou dois anos, ou depois de um abandono ou para poder participar do SLA
-				br 		cd_mat year grade status name_student dt_nasc idade type_program error if error == -1 	//there are observations that we can clearly see its a mistake
-				br 		cd_mat year grade status name_student dt_nasc idade  error if error == -2  
-				br 		cd_mat year grade status name_student dt_nasc idade  error if error < - 2 	//there are observations that we can clearly see its a mistake
-				drop if error < -1
-
-				br 		cd_mat year turma codschool name_student nm_mae dt_nasc grade type_program status if error == -1
-				/////TRABALHAR AQUIII/////
+				br 		cd_mat year grade status name_student dt_nasc idade type_program dif error if error < 0 //there are observations that we can clearly see its a mistake
 				
-				*drop if error == -1
+				bys cd_mat: egen max_year_dif_neg = max(year) if dif < 0
+				bys cd_mat: egen temp = max(max_year_dif_neg)
+				drop if year <=temp & error < 0 
 				
-				drop dif error erro max_erro
+				drop dif error erro max_erro max_year_dif_neg temp
 
 			}				
 				
@@ -719,12 +709,9 @@
 				bys    cd_mat: egen min_idade = min(idade)
 				su 		min_idade, detail
 				replace idade = . 		if min_idade < r(p1) | min_idade > r(p99)
-				bys 	cd_mat: egen max_idade = max(idade)
-				su 		max_idade, detail
-				replace idade = . 		if max_idade > r(p99)
 				
 				**
-				drop 		min_idade max_idade 
+				drop 		min_idade
 			}
 			
 
@@ -764,13 +751,13 @@
 				**
 				gen 		dif_idade_media = idade - idade_media_turma if 						  !missing(idade) & !missing(idade_media_turma)
 				
-				/*
-				gen  		erro = 1 							  		if dif_idade_media > 5 &  !missing(idade) & !missing(dif_idade_media)
+				su 			dif_idade_media, detail				
+				gen  		erro = 1 							  		if dif_idade_media < r(p1) | dif_idade_media > r(p99)
+				
 				bys 		cd_mat: egen max_erro = max(erro)
 				replace 	idade = . if max_erro == 1 
 				drop 		erro max_erro
 				replace 	dif_adequada = . if missing(idade)
-				*/
 				
 				**
 				drop 	    idade_adequada

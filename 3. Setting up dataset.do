@@ -121,7 +121,7 @@
 		*3rd merge -> using matchit command (looking for names that are typed differently in both datasets)
 		* ------------------------------------------------------------------------------------------------------------- *
 		{
-		/*
+		
 			foreach grade in 3 5 				{
 				
 				forvalues year = 2010(1)2018 	{
@@ -181,7 +181,7 @@
 					}
 				}
 			}
-			*/	
+			
 		
 			clear 
 			forvalues year = 2010(1)2018{
@@ -216,6 +216,12 @@
 			append 	using "$dtinter/Merged.dta"
 			save 		  "$dtinter/Merged_final.dta", replace
 		}
+		
+		
+		use  "$dtinter/Proficiência.dta", clear
+		keep if inlist(grade, 3, 4, 5)
+		
+		merge 1:1 id_prof using  "$dtinter/Merged_final.dta", keep(1 3)
 		
 
 	* _____________________________________________________________________________________________________________________________________________________________ *

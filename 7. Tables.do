@@ -138,12 +138,44 @@
 		**-------------------->>
 			order 		year age* agedistortion* col1 repetition*  col2 approval* col3 dropout*
 	}	
-		
+	
 	
 	
 	**
 	**
 	*Table A2
+	*
+	* _____________________________________________________________________________________________________________________________________________________________ *
+	{
+		use "$dtfinal/SE LIGA & Acelera_Recife.dta" 	if ((inlist(grade,3,5) & year < 2016) | (inlist(grade, 2,5) & year> 2015)) & inrange(year, 2010, 2018), clear		//elegible students  
+				
+				expand 2, gen(REP)
+				
+				replace year =  4000 if REP == 1
+				drop REP
+				
+				expand 2, gen (REP)
+				
+				replace acelera_school = 2 if REP == 1
+				
+
+				gen 	  student_saepe = prof_LP != .
+				
+				collapse (mean)student_saepe, by(grade year acelera_school)
+				
+				replace 	student_saepe = student_saepe*100
+				
+				reshape 	wide student_saepe, i(year grade) j(acelera_school)
+			
+				reshape 	wide student_saepe*, i(year) j(grade)
+			
+				order 		year student_saepe22 student_saepe23 student_saepe25 student_saepe02 student_saepe03 student_saepe05 student_saepe12 student_saepe13 student_saepe15
+		}	
+				
+	
+	**
+	**
+	*Table A3
 	*
 	* _____________________________________________________________________________________________________________________________________________________________ *
 	{
@@ -180,40 +212,12 @@
 			label var espaco_tardet_menos1			"Number of classrooms available afternoon year before"
 		
 			
-			iebaltab $covariadas_programa, format(%12.2fc) grpvar(educacao) savetex("$tables/TableA2")  fixedeffect(year) rowvarlabels replace 
+			iebaltab $covariadas_programa, format(%12.2fc) grpvar(educacao) savetex("$tables/TableA2.tex")  fixedeffect(year) rowvarlabels replace 
 	}
 			
 			
 			
-			
-			
-			
-			
-		use "$dtfinal/SE LIGA & Acelera_Recife.dta" 	if ((inlist(grade,3,5) & year < 2016) | (inlist(grade, 2,5) & year> 2015)) & inrange(year, 2010, 2018), clear		//elegible students  
-				
-				expand 2, gen(REP)
-				
-				replace year =  4000 if REP == 1
-				drop REP
-				
-				expand 2, gen (REP)
-				
-				replace acelera_school = 2 if REP == 1
-				
-
-				gen 	  student_saepe = prof_LP != .
-				
-				collapse (mean)student_saepe, by(grade year acelera_school)
-				
-				replace 	student_saepe = student_saepe*100
-				
-				reshape 	wide student_saepe, i(year grade) j(acelera_school)
-			
-				reshape 	wide student_saepe*, i(year) j(grade)
-			
-				order 		year student_saepe22 student_saepe23 student_saepe25 student_saepe02 student_saepe03 student_saepe05 student_saepe12 student_saepe13 student_saepe15
-			
-				
+	
 			
 			
 			

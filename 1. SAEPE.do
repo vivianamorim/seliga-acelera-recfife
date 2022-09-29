@@ -216,11 +216,11 @@
 				foreach grade in 2 3 5 9  {
 					foreach subject in MT LP {
 						su  	prof_`subject'															if 														 grade == `grade' & year == `year', detail
-						*replace prof_`subject'_stand = (prof_`subject' - r(min))/(r(max) - r(min)) 	if prof_`subject' >  r(min) & prof_`subject' < r(max) &  grade == `grade' & year == `year' & !missing(prof_`subject')
-						*replace prof_`subject'_stand = 0												if prof_`subject' == r(min) 						  &  grade == `grade' & year == `year' & !missing(prof_`subject')
-						*replace prof_`subject'_stand = 1												if prof_`subject' == r(max) 					      &  grade == `grade' & year == `year' & !missing(prof_`subject')
-						*su 		prof_`subject'_stand												if  													 grade == `grade' & year == `year', detail
-						replace prof_`subject'_stand = (prof_`subject' - r(mean))/r(sd)					if 														 grade == `grade' & year == `year' & !missing(prof_`subject')
+						replace prof_`subject'_stand = (prof_`subject' - r(min))/(r(max) - r(min)) 		if prof_`subject' >  r(min) & prof_`subject' < r(max) &  grade == `grade' & year == `year' & !missing(prof_`subject')
+						replace prof_`subject'_stand = 0												if prof_`subject' == r(min) 						  &  grade == `grade' & year == `year' & !missing(prof_`subject')
+						replace prof_`subject'_stand = 1												if prof_`subject' == r(max) 					      &  grade == `grade' & year == `year' & !missing(prof_`subject')
+						su 		prof_`subject'_stand													if  													 grade == `grade' & year == `year', detail
+						*replace prof_`subject'_stand = (prof_`subject' - r(mean))/r(sd)				if 														 grade == `grade' & year == `year' & !missing(prof_`subject')
 					}
 				}
 			}

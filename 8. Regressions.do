@@ -17,7 +17,7 @@
 			bys  cd_mat: egen min_first_acelera = min(first_acelera)
 			
 			
-			drop if primeiro_ano_painel == min_first_acelera //alunos participantes que nao tem baseline porque a pimeira 
+			drop if primeiro_ano_painel == min_first_acelera //alunos participantes que nao tem baseline porque a pimeira serie no painel ja eh o ano de participacao
 			bys 	cd_mat: gen total = _N 
 			drop 	if		    total == 1
 			
@@ -105,6 +105,8 @@
 			*
 			* -> Em todas as especificações, restringimos a análise a alunos elegíveis que não entraram na intervenção e alunos que entraram
 				
+			*grade = 0 is the pool sample
+			
 			**
 			**(A) Incluindo todas as escolas na análise (inclusive aquelas que nao empregaram a intervenção)
 			* ----------------------------------------------------------------------------------------------------------------------------------------------------- *
@@ -296,7 +298,7 @@
 		**
 		foreach grade in 0 { 
 
-			foreach outcome in approved dropped dist_2mais {  //dropped 
+			foreach outcome in approved dropped dist_1mais {  //dropped 
 			
 				if "`outcome' " ==  "approved" local title = "Approval"
 				if "`outcome' " ==  "repeated" local title = "Repetition"
@@ -318,22 +320,23 @@
 							treated_control, test(`i') outcome(`outcome')
 							local i = `i' + 1
 							
-							eststo test`i', title("Leads, lags"):  xtreg `outcome'  lag_0 lead_2 lead_1 lag_1 lag_2  			  i.codschool i.year i.grade i.gender students_class dif_idade_turma distorcao $schoolinfra 	    [aw = _weight], cluster(cd_mat) fe  // aqui chegamos ate a considerar colocar apenas entrou_1ano, mas inflamos o efeito do tratamento porque comparamos quem entrou  (mas nao necessariamente era elegivel) com apenas controles elegiveis
+							eststo test`i', title("Leads, lags"):  xtreg `outcome'  lag_0 lead_2 lead_1 lag_1 lag_2  			  i.codschool i.year i.grade i.gender students_class dif_idade_turma distorcao $schoolinfra 	    								[aw = _weight], cluster(cd_mat) fe  // aqui chegamos ate a considerar colocar apenas entrou_1ano, mas inflamos o efeito do tratamento porque comparamos quem entrou  (mas nao necessariamente era elegivel) com apenas controles elegiveis
 							treated_control, test(`i') outcome(`outcome')
 							local i = `i' + 1
-
-						
 					}
 					
+					// 																										 ja_participou_seliga i.status_anterior i.codschool i.year 
 					if "`outcome'" == "approved" {
-					estout * using "$tables/Table1.xls",  keep(d_acelera lag_0)  title("`title'")  label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 space unique_treat outcome_treat sd_treat ATT_sd space unique_control outcome_control unique_school  , labels("Obs" "R2" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" " Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) replace
+					estout * using "$tables/Table1.xls",  keep(d_acelera lag_0)  title("`title'")  label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_school space unique_treat outcome_treat sd_treat ATT_sd space unique_control outcome_control  , labels("Obs" "R2" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" "Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) replace
 					}
 					else{
-					estout * using "$tables/Table1.xls",  keep(d_acelera lag_0)  title("`title'")  label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 space unique_treat outcome_treat sd_treat ATT_sd space unique_control outcome_control unique_school  , labels("Obs" "R2" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" "Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) append
+					estout * using "$tables/Table1.xls",  keep(d_acelera lag_0)  title("`title'")  label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_school space unique_treat outcome_treat sd_treat ATT_sd space unique_control outcome_control  , labels("Obs" "R2" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" "Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) append
 					}
 					estimates clear		
 			}	
 		}
+		
+		
 		
 		
 		* __________________________________________________________________________________________________________________________________________________________ *
@@ -368,7 +371,7 @@
 						gen d_aceleraseliga =  d_acelera == 1 & seliga2014 == 1
 						sample, grade(`grade') criteria_eleg(1) spec("`spec'") ultimo_ano(2014)
 						
-							eststo test`i', title("DiD")		:  xtreg `outcome'  i.codschool i.year i.grade i.gender students_class dif_idade_turma distorcao $schoolinfra d_acelera	d_aceleraseliga									   [aw = _weight], cluster(cd_mat) fe  // aqui chegamos ate a considerar colocar apenas entrou_1ano, mas inflamos o efeito do tratamento porque comparamos quem entrou  (mas nao necessariamente era elegivel) com apenas controles elegiveis
+							eststo test`i', title("DiD")		:  xtreg `outcome'  i.codschool i.year i.grade i.gender students_class dif_idade_turma distorcao $schoolinfra d_acelera	d_aceleraseliga						 [aw = _weight], cluster(cd_mat) fe  // aqui chegamos ate a considerar colocar apenas entrou_1ano, mas inflamos o efeito do tratamento porque comparamos quem entrou  (mas nao necessariamente era elegivel) com apenas controles elegiveis
 							treated_control, test(`i') outcome(`outcome')
 							local i = `i' + 1
 							
@@ -378,10 +381,10 @@
 					}
 	
 					if "`outcome'" == "approved" {
-					estout * using "$tables/Table3.xls",  keep(d_acelera d_aceleraseliga lag_0 lag_0seliga)  title("`variable'")  label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(fmt(2))) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_treat unique_control unique_school, labels("Obs" "R2" "Treated" "Comparison" "Num. schools") fmt(%9.0g %9.2f %9.2f)) replace
+					estout * using "$tables/Table3.xls",  keep(d_acelera d_aceleraseliga lag_0 lag_0seliga)  title("`variable'")  label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_treat unique_control unique_school, labels("Obs" "R2" "Treated" "Comparison" "Num. schools") fmt(%9.0g %9.2f %9.2f)) replace
 					}
 					else{
-					estout * using "$tables/Table3.xls",  keep(d_acelera d_aceleraseliga lag_0 lag_0seliga)  title("`variable'") label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(fmt(2))) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_treat unique_control unique_school, labels("Obs" "R2" "Treated" "Comparison" "Num. schools") fmt(%9.0g %9.2f %9.2f)) append
+					estout * using "$tables/Table3.xls",  keep(d_acelera d_aceleraseliga lag_0 lag_0seliga)  title("`variable'") label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_treat unique_control unique_school, labels("Obs" "R2" "Treated" "Comparison" "Num. schools") fmt(%9.0g %9.2f %9.2f)) append
 					}
 					estimates clear		
 			}	
@@ -578,7 +581,7 @@
 			erase "$figures/Acelera_leads&lags_`grade'grade.gph"
 			}
 			*/
-		}
+		
 
 		
 		* __________________________________________________________________________________________________________________________________________________________ *
@@ -609,31 +612,31 @@
 
 						sample, grade(`grade') criteria_eleg(1) spec("`spec'") ultimo_ano(2014)
 						
-						
-						
-						eststo test`i', title("DiD")	   :  xtreg `outcome'  d_acelera  									i.codschool i.year i.grade i.gender students_class dif_idade_turma distorcao $schoolinfra 		[aw = _weight], cluster(cd_mat) fe  // aqui chegamos ate a considerar colocar apenas entrou_1ano, mas inflamos o efeito do tratamento porque comparamos quem entrou  (mas nao necessariamente era elegivel) com apenas controles elegiveis
+						**
+						*DiD
+						*-------------------------------------------------------------------------------------------------------------------------------------------*
+						eststo test`i', title("DiD")	   :  xtreg `outcome'  d_acelera  										i.codschool i.year i.grade i.gender students_class dif_idade_turma distorcao $schoolinfra 		[aw = _weight], cluster(cd_mat) fe  // aqui chegamos ate a considerar colocar apenas entrou_1ano, mas inflamos o efeito do tratamento porque comparamos quem entrou  (mas nao necessariamente era elegivel) com apenas controles elegiveis
 						treated_control, test(`i') outcome(`outcome')
 						local i = `i' + 1								
 						
 						foreach var of varlist gender dif_idade_turma distorcao {
-							
 							gen int_`var' 	   = d_acelera*`var'
-							eststo test`i', title("DiD")	   :  xtreg `outcome'  d_acelera  int_`var' 						i.codschool i.year i.grade i.gender students_class dif_idade_turma distorcao $schoolinfra 		[aw = _weight], cluster(cd_mat) fe  // aqui chegamos ate a considerar colocar apenas entrou_1ano, mas inflamos o efeito do tratamento porque comparamos quem entrou  (mas nao necessariamente era elegivel) com apenas controles elegiveis
+							eststo test`i', title("DiD")  :  xtreg `outcome'  d_acelera  int_`var' 								i.codschool i.year i.grade i.gender students_class dif_idade_turma distorcao $schoolinfra 		[aw = _weight], cluster(cd_mat) fe  // aqui chegamos ate a considerar colocar apenas entrou_1ano, mas inflamos o efeito do tratamento porque comparamos quem entrou  (mas nao necessariamente era elegivel) com apenas controles elegiveis
 							treated_control, test(`i') outcome(`outcome')
 							local i = `i' + 1							
 
 						}
 						
-						eststo test`i', title("Leads-Lags"):  xtreg `outcome'  lag_0  			 lead_2 lead_1 lag_1 lag_2  i.codschool i.year i.grade i.gender students_class dif_idade_turma distorcao $schoolinfra       [aw = _weight], cluster(cd_mat) fe  // aqui chegamos ate a considerar colocar apenas entrou_1ano, mas inflamos o efeito do tratamento porque comparamos quem entrou  (mas nao necessariamente era elegivel) com apenas controles elegiveis
+						**
+						*Leads and Lags
+						*-------------------------------------------------------------------------------------------------------------------------------------------*
+						eststo test`i', title("Leads-Lags"):   	  xtreg `outcome'  lag_0  			 lead_2 lead_1 lag_1 lag_2  i.codschool i.year i.grade i.gender students_class dif_idade_turma distorcao $schoolinfra       [aw = _weight], cluster(cd_mat) fe  // aqui chegamos ate a considerar colocar apenas entrou_1ano, mas inflamos o efeito do tratamento porque comparamos quem entrou  (mas nao necessariamente era elegivel) com apenas controles elegiveis
 						treated_control, test(`i') outcome(`outcome')
 						local i = `i' + 1							
 
 						drop int_*
 						foreach var of varlist gender dif_idade_turma distorcao {
-							
 							gen int_`var' 	   = lag_0*`var'
-						
-							
 							eststo test`i', title("Leads-Lags"):  xtreg `outcome'  lag_0  int_`var'  lead_2 lead_1 lag_1 lag_2  i.codschool i.year i.grade i.gender students_class dif_idade_turma distorcao $schoolinfra       [aw = _weight], cluster(cd_mat) fe  // aqui chegamos ate a considerar colocar apenas entrou_1ano, mas inflamos o efeito do tratamento porque comparamos quem entrou  (mas nao necessariamente era elegivel) com apenas controles elegiveis
 							treated_control, test(`i') outcome(`outcome')
 							local i = `i' + 1
@@ -641,10 +644,10 @@
 					}
 			}	
 			if "`outcome'" == "approved" {
-			estout * using "$tables/Table4.xls",  keep(lag_0* d_acelera* int*)  title("`title'")  label cells(b(star fmt(2)) se(fmt(2))) mgroups("Pooled" "3rd grade" "4th grade" "5th grade", pattern(1 0 0  1 0 0  1 0 0  1 0 0 )) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_treat unique_control unique_school, labels("Obs" "R2" "Treated" "Comparison" "Num. schools") fmt(%9.0g %9.2f %9.2f)) replace
+			estout * using "$tables/Table4.xls",  keep(lag_0* d_acelera* int*)  title("`title'")  label cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))) mgroups("Pooled" "3rd grade" "4th grade" "5th grade", pattern(1 0 0  1 0 0  1 0 0  1 0 0 )) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_treat unique_control unique_school, labels("Obs" "R2" "Treated" "Comparison" "Num. schools") fmt(%9.0g %9.2f %9.2f)) replace
 			}
 			else{
-			estout * using "$tables/Table4.xls",  keep(lag_0* d_acelera* int*)  title("`title'")  label cells(b(star fmt(2)) se(fmt(2))) mgroups("Pooled" "3rd grade" "4th grade" "5th grade", pattern(1 0 0  1 0 0  1 0 0  1 0 0 )) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_treat unique_control unique_school, labels("Obs" "R2" "Treated" "Comparison" "Num. schools") fmt(%9.0g %9.2f %9.2f)) append
+			estout * using "$tables/Table4.xls",  keep(lag_0* d_acelera* int*)  title("`title'")  label cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))) mgroups("Pooled" "3rd grade" "4th grade" "5th grade", pattern(1 0 0  1 0 0  1 0 0  1 0 0 )) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_treat unique_control unique_school, labels("Obs" "R2" "Treated" "Comparison" "Num. schools") fmt(%9.0g %9.2f %9.2f)) append
 			}
 			estimates clear			
 		}
