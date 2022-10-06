@@ -212,7 +212,7 @@
 			label var espaco_tardet_menos1			"Number of classrooms available afternoon year before"
 		
 			
-			iebaltab $covariadas_programa, format(%12.2fc) grpvar(educacao) savetex("$tables/TableA2.tex")  fixedeffect(year) rowvarlabels replace 
+			iebaltab $covariadas_programa, format(%12.2fc) grpvar(educacao) savetex("$tables/TableB3.tex")  fixedeffect(year) rowvarlabels replace 
 	}
 			
 			

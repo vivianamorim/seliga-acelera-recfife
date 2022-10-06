@@ -447,7 +447,7 @@
 			*Removing duplicate observations
 			* ----------------------------------------------------------------------------------------------------------------------------------------------------- *
 			{   //Alunos que precisam ser excluídos -> alunos que aparecem duas vezes em um mesmo ano
-				duplicates 	tag cd_mat year, gen(tag)							
+					duplicates 	tag cd_mat year, gen(tag)							
 				bys 		cd_mat: egen max_tag = max(tag)		
 				br 			year codschool group cd_mat name_student dt_nasc nm_mae grade status type_program tag if max_tag == 1
 				
@@ -650,8 +650,6 @@
 				tab year status 																														//now we see that there are several observations without status between 2015-2018
 			}
 			
-		
-			
 			
 			*Correcao da variavel idade
 			* ----------------------------------------------------------------------------------------------------------------------------------------------------- *
@@ -671,11 +669,11 @@
 				su 			idade, detail
 			}	
 			
-				
+
 			*Alunos que "regrediram" uma serie
 			* ----------------------------------------------------------------------------------------------------------------------------------------------------- *			
 			{
-
+				/*
 				//Alguns alunos aparecem no 6o ano por ex em 2012 e depois aparecem no painel de novo no 5o ano em 2015
 				sort 	cd_mat year
 				gen 	dif = grade[_n] - grade[_n-1] if cd_mat[_n] == cd_mat[_n-1]			//aluno que regrediu de serie
@@ -698,9 +696,22 @@
 				drop if year <=temp & error < 0 
 				
 				drop dif error erro max_erro max_year_dif_neg temp
-
-			}				
+				*/
+				/*
+				sort 	cd_mat year
+				gen 	dif = grade[_n] - grade[_n-1] if cd_mat[_n] == cd_mat[_n-1]			//aluno que regrediu de serie
+				tab 	dif
+				bys 	cd_mat: egen error = min(dif)
+				tab 	type_program if dif == 0
 				
+				gen erro = 1 if dif < 0 & type_program == 1
+				bys cd_mat: egen max_erro = max(erro)
+				
+				sort cd_mat year
+				br cd_mat year grade status name_student nm_mae dt_nasc if max_erro == 1
+				*/
+			}				
+			
 
 			*Alunos cuja idade minima ou maxima no painel eh outlier
 			* ----------------------------------------------------------------------------------------------------------------------------------------------------- *
@@ -968,6 +979,7 @@
 				replace 	num_parti_acelera 		= 0 if num_parti_acelera == .
 				gen 		ja_participou_seliga  	= year > min_first_seliga 
 				gen 		ja_participou_acelera 	= year > min_first_acelera
+				
 			}	
 			
 		
@@ -998,8 +1010,8 @@
 			{	
 				**
 				forvalues serie = 1(1)5 {
-					gen el2_`serie'ano 			= 1 if (grade == `serie') & distorcao   >= 1 & !missing(distorcao) & status_anterior == 2						//quando elegivel ao programa e reprovou em t-1
-					gen el1_`serie'ano 			= 1 if (grade == `serie') & distorcao   >= 1 & !missing(distorcao)												//quando elegivel ao programa
+					gen el2_`serie'ano 			= 1 if (grade == `serie') & distorcao   >= 1 & !missing(distorcao) & status_anterior == 2 & year >= 2010						//quando elegivel ao programa e reprovou em t-1
+					gen el1_`serie'ano 			= 1 if (grade == `serie') & distorcao   >= 1 & !missing(distorcao)						  & year >= 2010					//quando elegivel ao programa
 					gen en_`serie'ano_acelera 	= 1 if (grade == `serie'  &  (type_program == 3 ))
 				}
 				
@@ -1011,17 +1023,31 @@
 				
 				**
 				forvalues serie = 1(1)5 {
-					replace el1_nesse_ano 		  			= 1 if el1_`serie'ano		 	== 1 & grade == `serie'
-					replace el2_nesse_ano 		  			= 1 if el2_`serie'ano		 	== 1 & grade == `serie'
-					replace entrou_nesse_ano_acelera  	  	= 1 if en_`serie'ano_acelera	== 1 & grade == `serie'
+					replace el1_nesse_ano 		  			= 1 if el1_`serie'ano		 	== 1 & grade == `serie' & year >= 2010
+					replace el2_nesse_ano 		  			= 1 if el2_`serie'ano		 	== 1 & grade == `serie' & year >= 2010
+					replace entrou_nesse_ano_acelera  	  	= 1 if en_`serie'ano_acelera	== 1 & grade == `serie' & year >= 2010
 				}
 				
 				**
 				gen 	d_seliga  =  t_seliga  == 1 | ja_participou_seliga  == 1 //dummy que assume valor 1 no ano que o aluno participa do programa ou depois
 				gen 	d_acelera =  t_acelera == 1 | ja_participou_acelera == 1
+		
+		
+				gen 		depois_acelera			= 1 if year>=  min_first_acelera & !missing(min_first_acelera)
+				replace	 	depois_acelera 			= 0 if year <  min_first_acelera & !missing(min_first_acelera)
+				
+				bys cd_mat: egen Amin_elegivel = min(year) if el1_nesse_ano == 1
+				bys cd_mat: egen  min_elegivel = max(Amin_elegivel)
+				
+				replace 	depois_acelera 			= 1 if year >= min_elegivel & none2014 == 1 & !missing(min_elegivel)
+				replace 	depois_acelera			= 0 if year <  min_elegivel & none2014 == 1 & !missing(min_elegivel)
+				
+				bys cd_mat: egen jafoielegivel = max(el1_nesse_ano) 
+				
+				replace 	depois_acelera = 0 if (year < 2010 & acelera2014 == 1) | (year< 2010 & jafoielegivel == 1)
+		
 			}	
 
-			
 			*Formatting
 			* ----------------------------------------------------------------------------------------------------------------------------------------------------- *
 			{	

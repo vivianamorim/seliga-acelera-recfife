@@ -3,7 +3,8 @@
 	**
 	**Covariadas ao nivel da escola
 	global schoolinfra EnergyAccess SewerAccess WaterAccess Computer Library ComputerLab ScienceLab SportCourt InternetAccess SchoolEmployees BroadBandInternet
-	
+	global ultimo_ano = 2014
+		
 		
 	**PROGRAMA PARA RODAR PARA GARANTIR QUE ALUNOS TRATADOS TENHAM UMA OBSERVAÇÃO ANTES E DEPOIS DA PARTICIPAÇÃO
 	* _____________________________________________________________________________________________________________________________________________________________ *
@@ -40,13 +41,10 @@
 			}
 			gen 	 	lag_0   = year == min_first_acelera
 			
-			gen  		lead_3   = year - min_first_acelera < - 2 & acelera2014 == 1 
-			gen  		lag_3    = year - min_first_acelera >   2 & acelera2014 == 1 
-			
-			gen 	 	lag_0seliga    = year == min_first_acelera  & seliga2014 == 1 
+			gen 	 	lag_0seliga    = year == min_first_acelera  & seliga$ultimo_ano == 1 
 			
 			///
-			*drop if (lead_1 + lead_2 + lag_0 + lag_1 + lag_2 == 0) & acelera2014 == 1
+			*drop if (lead_1 + lead_2 + lag_0 + lag_1 + lag_2 == 0) & acelera`ultimo_ano'  == 1
 			
 		end
 	}
@@ -61,20 +59,20 @@
 	
 		local ATT = el(r(table),1,1)
 	
-		unique cd_mat    if e(sample) == 1 & acelera2014 == 1						
+		unique cd_mat    if e(sample) == 1 & acelera$ultimo_ano == 1						
 		scalar unique_treat  = r(unique)
 				
-		unique cd_mat    if e(sample) == 1 & acelera2014 == 0						//number of schools in the control group
+		unique cd_mat    if e(sample) == 1 & acelera$ultimo_ano == 0						//number of schools in the control group
 		scalar unique_control = r(unique)
 				
 		unique codschool if e(sample) == 1 											//number of schools in the control group
 		scalar unique_school = r(unique)
 		
-		su `outcome' [aw = _weight] if acelera2014 == 1 & year < min_first_acelera & e(sample) == 1
+		su `outcome' [aw = _weight] if acelera$ultimo_ano == 1 & year < min_first_acelera & e(sample) == 1
 		scalar outcome_treat = r(mean)
 		scalar sd_treat		 = r(sd)
 		
-		su `outcome' [aw = _weight] if acelera2014 == 0	 						   & e(sample) == 1
+		su `outcome' [aw = _weight] if acelera$ultimo_ano == 0	 						   & e(sample) == 1
 		scalar outcome_control = r(mean)
 		
 		scalar ATT_sd = `ATT'/sd_treat	
@@ -95,7 +93,7 @@
 	{	
 		cap program drop sample
 		program define   sample
-		syntax, 				grade(integer) criteria_eleg(integer) spec(string) ultimo_ano(integer)
+		syntax, 				grade(integer) criteria_eleg(integer) spec(string)
 		
 			xtset cd_mat year	
 		
@@ -111,7 +109,7 @@
 			**(A) Incluindo todas as escolas na análise (inclusive aquelas que nao empregaram a intervenção)
 			* ----------------------------------------------------------------------------------------------------------------------------------------------------- *
 			if "`spec'" == "A" {
-				forvalues year = 2010(1)`ultimo_ano' {
+				forvalues year = 2010(1)$ultimo_ano {
 					preserve
 					 if `grade' != 0	keep 		if ((el`criteria_eleg'_`grade'ano == 1 & t_acelera == 1 & ja_participou_acelera == 0) | (el`criteria_eleg'_`grade'ano == 1 & type_program == 1 & ja_participou_acelera == 0)) & year == `year' //Por serie
 					 if `grade' == 0	keep 		if ((el`criteria_eleg'_nesse_ano  == 1 & t_acelera == 1 & ja_participou_acelera == 0) | (el`criteria_eleg'_nesse_ano  == 1 & type_program == 1 & ja_participou_acelera == 0)) & year == `year' //pooled
@@ -127,7 +125,7 @@
 			**(B) Incluindo apenas as escolas que ofereceram a intervenção acelera naquele ano
 			* ----------------------------------------------------------------------------------------------------------------------------------------------------- *
 			if "`spec'" == "B" {
-				forvalues year = 2010(1)`ultimo_ano' {
+				forvalues year = 2010(1)$ultimo_ano {
 					preserve
 					 if `grade' != 0	keep 		if ((el`criteria_eleg'_`grade'ano == 1 & t_acelera == 1 & ja_participou_acelera == 0) | (el`criteria_eleg'_`grade'ano == 1 & type_program == 1 & ja_participou_acelera == 0)) & year == `year' & tem_acelera_nesse_ano == 1 //Por serie
 					 if `grade' == 0	keep 		if ((el`criteria_eleg'_nesse_ano  == 1 & t_acelera == 1 & ja_participou_acelera == 0) | (el`criteria_eleg'_nesse_ano  == 1 & type_program == 1 & ja_participou_acelera == 0)) & year == `year' & tem_acelera_nesse_ano == 1  //pooled
@@ -146,7 +144,7 @@
 
 			preserve
 				clear
-				forvalues year = 2010(1)`ultimo_ano' {
+				forvalues year = 2010(1)$ultimo_ano {
 					append using ``year''
 				}
 				duplicates drop cd_mat, force
@@ -165,7 +163,7 @@
 				
 				**
 				**Elegiveis
-				forvalues year = 2010(1)`ultimo_ano' {
+				forvalues year = 2010(1)$ultimo_ano {
 					preserve
 					if "`spec'" == "D"  keep if tem_acelera_nesse_ano == 1  & year == `year' //apenas as escolas que oferecem o programa
 					if `grade' != 0	keep 		if ((el`criteria_eleg'_`grade'ano == 1 & t_acelera == 1 & ja_participou_acelera == 0) | (el`criteria_eleg'_`grade'ano == 1 & type_program == 1 & ja_participou_acelera == 0)) //Por serie
@@ -180,7 +178,7 @@
 				**Appeding elegiveis				
 					preserve
 					clear
-					forvalues year = 2010(1)`ultimo_ano' {
+					forvalues year = 2010(1)$ultimo_ano {
 						append using ``year''
 					}
 					duplicates drop cd_mat, force
@@ -193,16 +191,16 @@
 					preserve
 					merge m:1 cd_mat using `sample', keep(3) nogen
 				
-					psmatch2 acelera`ultimo_ano' distorcao ja_participou_seliga i.status_anterior i.codschool i.year gender dif_idade_turma , n(3) common ties
+					psmatch2 acelera$ultimo_ano distorcao ja_participou_seliga i.status_anterior i.codschool i.year gender dif_idade_turma , n(3) common ties
 					if "`spec'" == "D" & `grade' == 0{
 						if `grade' == 0 local title = "Pooled"
 						if `grade' == 3 local title = "3{sup:rd} grade"
 						if `grade' == 4 local title = "4{sup:th} grade"
 						if `grade' == 5 local title = "5{sup:th} grade"
 				
-						tw kdensity _pscore if acelera2014 == 1  [aw = _weight],  lw(1.5) lp(dash) color(red) 				///
+						tw kdensity _pscore if acelera$ultimo_ano == 1  [aw = _weight],  lw(1.5) lp(dash) color(red) 				///
 						///
-						|| kdensity _pscore if acelera2014 == 1  [aw = _weight],  lw(thick) lp(dash) color(gs12) 			///
+						|| kdensity _pscore if acelera$ultimo_ano == 1  [aw = _weight],  lw(thick) lp(dash) color(gs12) 			///
 						graphregion(color(white) fcolor(white) lcolor(white) icolor(white) ifcolor(white) ilcolor(white)) 	///
 						plotregion(color(white) fcolor(white) lcolor(white) icolor(white) ifcolor(white) ilcolor(white)) 	///
 						ylabel(, labsize(small) angle(horizontal) format(%2.1fc)) 											///
@@ -235,9 +233,8 @@
 				
 				if "`spec'" == "A" | "`spec'" == "B"  gen _weight = 1
 				
-				if `ultimo_ano' != 2018 baseline			//so mantendo alunos que apresentam baseline
-				
-				if `ultimo_ano' != 2018 leadlag				//criando as variaveis de leads and lags
+				baseline
+				leadlag, ultimo_ano($ultimo_ano)
 				
 			}
 		
@@ -250,8 +247,8 @@
 				
 				forvalues year = 2010(1)`ultimo_ano' {
 					preserve
-					keep 		if (min_first_acelera == `year' | none2014 == 1)
-					gen         T  =  none2014 == 0
+					keep 		if (min_first_acelera == `year' | none`ultimo_ano'  == 1)
+					gen         T  =  none`ultimo_ano'  == 0
 					collapse 	(mean)approved repeated dropped, by (year T) 
 					gen	 		ano_tratamento = `year'
 					tempfile    `year'
@@ -287,6 +284,8 @@
 	*---------------------------------------------------------------------------------------------------------------------------------------------------------------*
 	*/
 	
+	matrix results = (0,0,0,0,0,0)
+	
 		* __________________________________________________________________________________________________________________________________________________________ *
 		**
 		**
@@ -294,11 +293,11 @@
 		*-----------------------------------------------------------------------------------------------------------------------------------------------------------*
 		**
 		estimates clear
-		
+
 		**
 		foreach grade in 0 { 
 
-			foreach outcome in approved dropped dist_1mais {  //dropped 
+			foreach outcome in approved dropped  dist_1mais {  //dropped  dist_1mais
 			
 				if "`outcome' " ==  "approved" local title = "Approval"
 				if "`outcome' " ==  "repeated" local title = "Repetition"
@@ -308,88 +307,47 @@
 				
 					foreach spec in  A B C D {
 						
-						use 	"$dtfinal/SE LIGA & Acelera_Recife.dta" if year < 2015, clear
+						use 	"$dtfinal/SE LIGA & Acelera_Recife.dta" if year <= $ultimo_ano, clear
 						
 						****--------------------------->>>
-						drop if seliga2014 == 1
+						drop if seliga$ultimo_ano == 1
 						****--------------------------->>>
 
-						sample, grade(`grade') criteria_eleg(1) spec("`spec'") ultimo_ano(2014)
+						sample, grade(`grade') criteria_eleg(1) spec("`spec'") 
 						
 							eststo test`i', title("DiD")		:  xtreg `outcome'  d_acelera									  i.codschool i.year i.grade i.gender students_class dif_idade_turma distorcao $schoolinfra 										[aw = _weight], cluster(cd_mat) fe  // aqui chegamos ate a considerar colocar apenas entrou_1ano, mas inflamos o efeito do tratamento porque comparamos quem entrou  (mas nao necessariamente era elegivel) com apenas controles elegiveis
 							treated_control, test(`i') outcome(`outcome')
 							local i = `i' + 1
 							
 							eststo test`i', title("Leads, lags"):  xtreg `outcome'  lag_0 lead_2 lead_1 lag_1 lag_2  			  i.codschool i.year i.grade i.gender students_class dif_idade_turma distorcao $schoolinfra 	    								[aw = _weight], cluster(cd_mat) fe  // aqui chegamos ate a considerar colocar apenas entrou_1ano, mas inflamos o efeito do tratamento porque comparamos quem entrou  (mas nao necessariamente era elegivel) com apenas controles elegiveis
-							treated_control, test(`i') outcome(`outcome')
+							treated_control, test(`i') outcome(`outcome') 
 							local i = `i' + 1
+							
+							/*
+							if "`spec'" == "D" & "`outcome'" == "approved" {
+								foreach quantile in 20 40 60 80 { 
+									**
+									cic 	continuous `outcome'  acelera`ultimo_ano' 	depois_acelera	  i.codschool i.year i.grade i.gender students_class dif_idade_turma distorcao $schoolinfra 	    								[aw = _weight],  did at(`quantile') vce(bootstrap, reps(10))
+									matrix 	reg_results = r(table)
+									matrix 	results = results \ (`amostra', 1, reg_results[1, colsof(reg_results)-2], reg_results[5,colsof(reg_results)-2], reg_results[6,colsof(reg_results)-2], `quantile')	 	
+								}
+							}
+							*/
+	
 					}
 					
 					// 																										 ja_participou_seliga i.status_anterior i.codschool i.year 
 					if "`outcome'" == "approved" {
-					estout * using "$tables/Table1.xls",  keep(d_acelera lag_0)  title("`title'")  label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_school space unique_treat outcome_treat sd_treat ATT_sd space unique_control outcome_control  , labels("Obs" "R2" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" "Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) replace
+					estout * using "$tables/Table1.xls",  keep(d_acelera lag_0)  title("`title'")  label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_school space unique_treat outcome_treat sd_treat ATT_sd space unique_control outcome_control  , labels("Obs" "R2" "Number of schools" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" "Comparison Group" "Students" "Mean outcome") fmt(%9.0g %9.2f %9.2f)) replace
 					}
 					else{
-					estout * using "$tables/Table1.xls",  keep(d_acelera lag_0)  title("`title'")  label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_school space unique_treat outcome_treat sd_treat ATT_sd space unique_control outcome_control  , labels("Obs" "R2" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" "Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) append
+					estout * using "$tables/Table1.xls",  keep(d_acelera lag_0)  title("`title'")  label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_school space unique_treat outcome_treat sd_treat ATT_sd space unique_control outcome_control  , labels("Obs" "R2" "Number of schools" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" "Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) append
 					}
 					estimates clear		
 			}	
 		}
 		
-		
-		
-		
-		* __________________________________________________________________________________________________________________________________________________________ *
-		**
-		**
-		*Table 3
-		*-----------------------------------------------------------------------------------------------------------------------------------------------------------*
-		**
-		estimates clear
-		
-		**
-		foreach grade in 0  { 
-
-			foreach outcome of varlist approved dropped {  //dropped 
-			
-				if "`outcome' " ==  "approved" local variable = "Approval"
-				if "`outcome' " ==  "repeated" local variable = "Repetition"
-				if "`outcome' " ==  "dropped"  local variable = "Dropout"
-				
-				local i = 1
-				
-					foreach spec in A B C D {
-						if "`spec'" == "A" | "`spec'" == "C" local  title = "All schools"
-						if "`spec'" == "B" | "`spec'" == "D" local  title = "Acelera schools"
-						
-						use 	"$dtfinal/SE LIGA & Acelera_Recife.dta" if year < 2015, clear
-						
-						****--------------------------->>>
-						drop if seliga2014 == 1 & acelera2014 == 0 //quem fez se liga vai melhor no acelera?, estamos tirando do grupo de controle quem ja fez se liga
-						****--------------------------->>>
-
-						gen d_aceleraseliga =  d_acelera == 1 & seliga2014 == 1
-						sample, grade(`grade') criteria_eleg(1) spec("`spec'") ultimo_ano(2014)
-						
-							eststo test`i', title("DiD")		:  xtreg `outcome'  i.codschool i.year i.grade i.gender students_class dif_idade_turma distorcao $schoolinfra d_acelera	d_aceleraseliga						 [aw = _weight], cluster(cd_mat) fe  // aqui chegamos ate a considerar colocar apenas entrou_1ano, mas inflamos o efeito do tratamento porque comparamos quem entrou  (mas nao necessariamente era elegivel) com apenas controles elegiveis
-							treated_control, test(`i') outcome(`outcome')
-							local i = `i' + 1
-							
-							eststo test`i', title("Leads, lags"):  xtreg `outcome'  i.codschool i.year i.grade i.gender students_class dif_idade_turma distorcao $schoolinfra lag_0 lead_2 lead_1 lag_1 lag_2 lag_0seliga    [aw = _weight], cluster(cd_mat) fe  // aqui chegamos ate a considerar colocar apenas entrou_1ano, mas inflamos o efeito do tratamento porque comparamos quem entrou  (mas nao necessariamente era elegivel) com apenas controles elegiveis
-							treated_control, test(`i') outcome(`outcome')
-							local i = `i' + 1
-					}
-	
-					if "`outcome'" == "approved" {
-					estout * using "$tables/Table3.xls",  keep(d_acelera d_aceleraseliga lag_0 lag_0seliga)  title("`variable'")  label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_treat unique_control unique_school, labels("Obs" "R2" "Treated" "Comparison" "Num. schools") fmt(%9.0g %9.2f %9.2f)) replace
-					}
-					else{
-					estout * using "$tables/Table3.xls",  keep(d_acelera d_aceleraseliga lag_0 lag_0seliga)  title("`variable'") label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_treat unique_control unique_school, labels("Obs" "R2" "Treated" "Comparison" "Num. schools") fmt(%9.0g %9.2f %9.2f)) append
-					}
-					estimates clear		
-			}	
-		}
-		* __________________________________________________________________________________________________________________________________________________________ *		
+		/*
 		
 		
 		**
@@ -405,7 +363,7 @@
 			xtset 	cd_mat year
 		
 			****--------------------------->>>
-			drop if seliga2014 == 1
+			drop if seliga$ultimo_ano == 1
 			****--------------------------->>>
 				**
 				*Chart titles
@@ -421,7 +379,7 @@
 				{
 					**
 					**Elegiveis
-					forvalues year = 2010(1)2014 {
+					forvalues year = 2010(1)$ultimo_ano {
 						preserve
 						keep if tem_acelera_nesse_ano == 1  & year == `year' 			//apenas as escolas que oferecem o programa
 						if `grade' == 5 | `grade' == 4 keep if ((el1_`grade'ano == 1  & t_acelera == 1 & ja_participou_acelera == 0) | (el1_`grade'ano == 1 & type_program == 1 & ja_participou_acelera == 0)) //Por serie
@@ -439,7 +397,7 @@
 					**Appeding elegiveis				
 						preserve
 						clear
-						forvalues year = 2010(1)2014 {
+						forvalues year = 2010(1)$ultimo_ano {
 							append using ``year''
 						}
 						duplicates drop cd_mat, force
@@ -452,7 +410,7 @@
 						preserve
 						merge m:1 cd_mat using `sample', keep(3) nogen
 					
-						psmatch2 acelera2014 distorcao ja_participou_seliga i.status_anterior i.codschool i.year gender dif_idade_turma, n(3) common ties
+						psmatch2 acelera$ultimo_ano distorcao ja_participou_seliga i.status_anterior i.codschool i.year gender dif_idade_turma, n(3) common ties
 					
 							tw kdensity _pscore if acelera2014 == 1  [aw = _weight],  lw(1.5) lp(dash) color(red) 				///
 							///
@@ -537,7 +495,7 @@
 					ylabel(, labsize(medsmall) format(%2.1fc)) 															///
 					xlabel(-3(1)2, labsize(medsmall) gmax angle(horizontal)) 											///
 					yscale(alt)																							///
-					ytitle("Variation, in pp", size(medsmall))			 							///
+					ytitle("Difference in grade-promotion, in pp", size(medsmall))			 							///
 					xtitle("") 																							///
 					title("`title'", pos(12) size(medsmall)) 															///
 					subtitle(, pos(12) size(medsmall)) 																	///
@@ -607,10 +565,10 @@
 						use 	"$dtfinal/SE LIGA & Acelera_Recife.dta" if year < 2015, clear
 						
 						****--------------------------->>>
-						drop if seliga2014 == 1
+						drop if seliga$ultimo_ano == 1
 						****--------------------------->>>
 
-						sample, grade(`grade') criteria_eleg(1) spec("`spec'") ultimo_ano(2014)
+						sample, grade(`grade') criteria_eleg(1) spec("`spec'") 
 						
 						**
 						*DiD
@@ -655,18 +613,45 @@
 		
 		
 		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 
 	/*		
-			
-
-		
-		keep 
+					keep 
 		
 		/*
-		
-		
-		
-		
+
 		
 		use 	"$dtfinal/SE LIGA & Acelera_Recife.dta" if year < 2015, clear	
 

@@ -43,63 +43,63 @@
 	
 	estimates clear
 
-	foreach sub in 3 4 {
+	foreach sub in  1 2  { //2 3 4
 	
 		use 	"$dtfinal/SE LIGA & Acelera_Recife.dta", clear
 
-		**
-		*Preparing data
-		*---------------------------------------------------------------------------------------------------------------------------------------------------------- *
-		{
-		if `sub' == 1 local subject = "prof_LP_stand"
-		if `sub' == 2 local subject = "prof_MT_stand"
-		if `sub' == 3 local subject = "insuf_mat"
-		if `sub' == 4 local subject = "insuf_port"
+			**
+			*Preparing data
+			*------------------------------------------------------------------------------------------------------------------------------------------------------ *
+			{
+			if `sub' == 1 local subject = "prof_LP_stand"
+			if `sub' == 2 local subject = "prof_MT_stand"
+			if `sub' == 3 local subject = "insuf_mat"
+			if `sub' == 4 local subject = "insuf_port"
+			
+			*bys 		cd_mat: egen 	ultima_vez_3ano   	= max(year) 	if grade == 3  & `subject' != .	&  ja_participou_acelera == 0						//ultima   vez desse ano no 3o ano
+			*bys 		cd_mat: egen 	primeira_vez_5ano 	= min(year) 	if grade == 5  & `subject' != .	& (ja_participou_acelera == 1 | none2018 == 1)		//primeira vez desse ano no 5o ano
+			bys 		cd_mat: egen 	ultima_vez_3ano   	= max(year) 	if grade == 3  & `subject' != .				//ultima   vez desse ano no 3o ano
+			bys 		cd_mat: egen 	primeira_vez_5ano 	= min(year) 	if grade == 5  & `subject' != .				//primeira vez desse ano no 5o ano
 		
-		*bys 		cd_mat: egen 	ultima_vez_3ano   	= max(year) 	if grade == 3  & `subject' != .	&  ja_participou_acelera == 0						//ultima   vez desse ano no 3o ano
-		*bys 		cd_mat: egen 	primeira_vez_5ano 	= min(year) 	if grade == 5  & `subject' != .	& (ja_participou_acelera == 1 | none2018 == 1)		//primeira vez desse ano no 5o ano
-		bys 		cd_mat: egen 	ultima_vez_3ano   	= max(year) 	if grade == 3  & `subject' != .				//ultima   vez desse ano no 3o ano
-		bys 		cd_mat: egen 	primeira_vez_5ano 	= min(year) 	if grade == 5  & `subject' != .				//primeira vez desse ano no 5o ano
-	
-		bys 		cd_mat: gen 	Atem_3ano 			= 1 			if grade == 3
-		bys 		cd_mat: gen 	Atem_5ano 			= 1 			if grade == 5
-		bys 		cd_mat: egen 	tem_3ano  			= max(Atem_3ano)
-		bys 		cd_mat: egen 	tem_5ano  			= max(Atem_5ano)
-		bys			cd_mat: egen 	tem_prof3ano 	    = max(ultima_vez_3ano  ) 
-		bys 		cd_mat: egen 	tem_prof5ano 	    = max(primeira_vez_5ano)
+			bys 		cd_mat: gen 	Atem_3ano 			= 1 			if grade == 3
+			bys 		cd_mat: gen 	Atem_5ano 			= 1 			if grade == 5
+			bys 		cd_mat: egen 	tem_3ano  			= max(Atem_3ano)
+			bys 		cd_mat: egen 	tem_5ano  			= max(Atem_5ano)
+			bys			cd_mat: egen 	tem_prof3ano 	    = max(ultima_vez_3ano  ) 
+			bys 		cd_mat: egen 	tem_prof5ano 	    = max(primeira_vez_5ano)
+			
+			replace 	tem_prof3ano 	= 1 								if tem_prof3ano !=.
+			replace 	tem_prof3ano 	= 0 								if tem_prof3ano == .
+			replace 	tem_prof5ano 	= 1	 								if tem_prof5ano !=.
+			replace 	tem_prof5ano 	= 0 								if tem_prof5ano == .
+			replace 	tem_5ano = 0 										if tem_5ano == . & pulou2_program3 != 1			//o aluno nao tem 5 ano, mas nao foi porque ele pulou duas series porque pulou2_program3 !=1
+			
+			gen 		tem_prof3e5ano  = 1 if (tem_prof3ano == 1 & tem_prof5ano == 1)
+			replace 	tem_prof3e5ano  = 0 if 										 	tem_prof3e5ano != 1
+			replace 	pulou2_program3 = 0 if pulou1_program3 == 1 | status == 2 | status  == 3
 		
-		replace 	tem_prof3ano 	= 1 								if tem_prof3ano !=.
-		replace 	tem_prof3ano 	= 0 								if tem_prof3ano == .
-		replace 	tem_prof5ano 	= 1	 								if tem_prof5ano !=.
-		replace 	tem_prof5ano 	= 0 								if tem_prof5ano == .
-		replace 	tem_5ano = 0 										if tem_5ano == . & pulou2_program3 != 1			//o aluno nao tem 5 ano, mas nao foi porque ele pulou duas series porque pulou2_program3 !=1
+			
+			preserve
+			//entre os alunos do 4 ano que participaram do acelera, tem muitos que nao fizeram o exame de prof no 5 ano. Por que? 
+				*-> uma explicacao seria que os piores alunos nao foram enviados para fazer a prova.
+				*-> outra explicacao seria que os alunos do quarto ano pularam duas series (indo para o 6o ano) e portanto nao fizeram a prova. 
+				*-> outra explicacao poderia ser porque esses alunos que nao fizeram a prova repetiram de ano. 
+			if `sub' == 1 {
+			keep  							if grade 	== 4   & t_acelera == 1			//comparando alunos de 4 anos com acelera
+			replace 	pulou2_program3 = pulou2_program3*100
+			iebaltab 	distorcao approved repeated prof_LP3ano prof_MT3ano pulou2_program3, format(%12.2fc) grpvar(tem_prof5ano) fixedeffect(year)   save("$tables/Fourfh-graders.xlsx") rowvarlabels replace 
+			}
+			restore
+			
+			tempfile data
+			save 	`data'
+			}
 		
-		gen 		tem_prof3e5ano  = 1 if (tem_prof3ano == 1 & tem_prof5ano == 1)
-		replace 	tem_prof3e5ano  = 0 if 										 	tem_prof3e5ano != 1
-		replace 	pulou2_program3 = 0 if pulou1_program3 == 1 | status == 2 | status  == 3
-	
-		
-		preserve
-		//entre os alunos do 4 ano que participaram do acelera, tem muitos que nao fizeram o exame de prof no 5 ano. Por que? 
-			*-> uma explicacao seria que os piores alunos nao foram enviados para fazer a prova.
-			*-> outra explicacao seria que os alunos do quarto ano pularam duas series (indo para o 6o ano) e portanto nao fizeram a prova. 
-			*-> outra explicacao poderia ser porque esses alunos que nao fizeram a prova repetiram de ano. 
-		if `sub' == 1 {
-		keep  							if grade 	== 4   & t_acelera == 1			//comparando alunos de 4 anos com acelera
-		replace 	pulou2_program3 = pulou2_program3*100
-		iebaltab 	distorcao approved repeated prof_LP3ano prof_MT3ano pulou2_program3, format(%12.2fc) grpvar(tem_prof5ano) fixedeffect(year)   save("$tables/Fourfh-graders.xlsx") rowvarlabels replace 
-		}
-		restore
-		
-		tempfile data
-		save 	`data'
-		}
-	
 		
 		**
 		*Regressions
 		*---------------------------------------------------------------------------------------------------------------------------------------------------------- *
-		foreach amostra in  0 1 { //0-> All schools, 1-> only Acelera schools
+		foreach amostra in 0 1 { //0-> All schools, 1-> only Acelera schools
 				
 			use `data', clear
 					
@@ -169,13 +169,13 @@
 						replace `var' = `var'*100
 						}
 						merge 1:1 year using `pulou2'
-						replace  pulou2_program3 =  pulou2_program3/id13
+						replace  pulou2_program3 =  (pulou2_program3/id13)*100
 						order id01 tem_prof3ano01 tem_prof5ano01 tem_prof3e5ano01 col1 id13 pulou2_program3  tem_prof3ano13 tem_prof5ano13 tem_prof3e5ano13 col2  id11 tem_prof3ano11 tem_prof5ano11 tem_prof3e5ano11 
 						keep  id01 tem_prof3ano01 tem_prof5ano01 tem_prof3e5ano01 col1 id13 pulou2_program3  tem_prof3ano13 tem_prof5ano13 tem_prof3e5ano13 col2  id11 tem_prof3ano11 tem_prof5ano11 tem_prof3e5ano11
 						br id01 					tem_prof3ano01 tem_prof5ano01 tem_prof3e5ano01 col1 ///							//TABELA
 						   id13 pulou2_program3   	tem_prof3ano13 tem_prof5ano13 tem_prof3e5ano13 col2 ///
 						   id11 					tem_prof3ano11 tem_prof5ano11 tem_prof3e5ano11 
-						export excel using "$tables/teste.xlsx",  firstrow(variables) replace
+						export excel using "$tables/Table2.3.xlsx",  firstrow(variables) replace
 					restore
 					}
 					
@@ -221,10 +221,11 @@
 						*Balance test
 						*----------------------------------->>
 						{
-							global balance_test distorcao prof_LP prof_MT approved gender dif_idade_turma
-							iebaltab $balance_test if grade == 3, grpvar(acelera2018) format(%12.2fc) fixedeffect(year)   save("$tables/balance-fourth-grade.xls") rowvarlabels replace 
+							if `amostra' == 1 & `sub' == 1 {
+							global balance_test distorcao approved repeated prof_LP3ano prof_MT3ano pulou2_program3
+							*iebaltab $balance_test if grade == 3, grpvar(acelera2018) format(%12.2fc) fixedeffect(year)   save("$tables/balance-fourth-grade.xls") rowvarlabels replace 
 							}
-						
+						}
 						
 						**
 						*No matching
@@ -294,11 +295,27 @@
 				}	
 		}			
 		
+				estout test01 test11 test01mat test11mat  test02 test12 test02mat test11mat using "$tables/Table.xls",  keep(d_acelera*)  cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 space unique_treat outcome_treat sd_treat space unique_control outcome_control unique_school  , labels("Obs" "R2" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" " Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) replace
+
+				
+				/*
+		estout * using "$tables/Table.xls",  keep(d_acelera*)  cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 space unique_treat outcome_treat sd_treat space unique_control outcome_control unique_school  , labels("Obs" "R2" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" " Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) replace
+		
+		
 
 		
+		estout test03 test13 test03mat test13mat  test04 test14 test04mat test14mat using "$tables/Table.xls",  keep(d_acelera*)  cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 space unique_treat outcome_treat sd_treat space unique_control outcome_control unique_school  , labels("Obs" "R2" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" " Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) append
 		
-		estout * using "$tables/Table.xls",  keep(d_acelera*)  cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 space unique_treat outcome_treat sd_treat space unique_control outcome_control unique_school  , labels("Obs" "R2" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" " Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) replace
-		estout test01 test11 test01mat test11mat  test02 test12 test02mat test11mat using "$tables/Table.xls",  keep(d_acelera*)  cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 space unique_treat outcome_treat sd_treat space unique_control outcome_control unique_school  , labels("Obs" "R2" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" " Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) replace
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 		
 		
 		
@@ -307,11 +324,7 @@
 	
 	
 /*
-	
-	
-	
-	
-	
+
 		**
 	*----------------------------------->>
 	*Spillovers
