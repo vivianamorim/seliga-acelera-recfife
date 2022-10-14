@@ -1207,9 +1207,15 @@
 			}
 
 			
+			use "$dtinter/Emprel.dta", clear
 			
+			gen atencao = 1 if t_acelera == 1 & status == 5
 			
+			bys  cd_mat: egen max_atencao = max(atencao) 
 			
+			sort cd_mat year
+			
+			br 	 cd_mat year type_program grade status if max_atencao == 1
 			
 			
 			

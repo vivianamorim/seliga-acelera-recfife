@@ -308,6 +308,7 @@
 					foreach spec in  A B C D {
 						
 						use 	"$dtfinal/SE LIGA & Acelera_Recife.dta" if year <= $ultimo_ano, clear
+						replace dist_1mais = dist_1mais*100
 						
 						****--------------------------->>>
 						drop if seliga$ultimo_ano == 1
@@ -338,17 +339,15 @@
 					
 					// 																										 ja_participou_seliga i.status_anterior i.codschool i.year 
 					if "`outcome'" == "approved" {
-					estout * using "$tables/Table1.xls",  keep(d_acelera lag_0)  title("`title'")  label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_school space unique_treat outcome_treat sd_treat ATT_sd space unique_control outcome_control  , labels("Obs" "R2" "Number of schools" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" "Comparison Group" "Students" "Mean outcome") fmt(%9.0g %9.2f %9.2f)) replace
+					estout * using "$tables/Table1.xls",  keep(d_acelera lag_0)  title("`title'")  label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_school space unique_treat outcome_treat sd_treat ATT_sd space unique_control outcome_control  , labels("Obs" "R2" "Number of schools" "Treatment Group" "Students" "Mean outcome" "SD" "ATT in sd" "Comparison Group" "Students" "Mean outcome") fmt(%9.0g %9.2f %9.2f)) replace
 					}
 					else{
-					estout * using "$tables/Table1.xls",  keep(d_acelera lag_0)  title("`title'")  label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 unique_school space unique_treat outcome_treat sd_treat ATT_sd space unique_control outcome_control  , labels("Obs" "R2" "Number of schools" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" "Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) append
+					estout * using "$tables/Table1.xls",  keep(d_acelera lag_0)  title("`title'")  label mgroups("No matching" "Matching", pattern(1 0 0 0 1 0 0 0)) cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 space outcome_treat sd_treat ATT_sd space outcome_control  , labels("Obs" "R2" 					   "Treatment Group"		    "Mean outcome" "SD" "ATT in sd" "Comparison Group" 			  "Mean outcome") fmt(%9.0g %9.2f %9.2f)) append
 					}
 					estimates clear		
 			}	
 		}
-		
-		/*
-		
+
 		
 		**
 		*Figure 1
@@ -412,9 +411,9 @@
 					
 						psmatch2 acelera$ultimo_ano distorcao ja_participou_seliga i.status_anterior i.codschool i.year gender dif_idade_turma, n(3) common ties
 					
-							tw kdensity _pscore if acelera2014 == 1  [aw = _weight],  lw(1.5) lp(dash) color(red) 				///
+							tw kdensity _pscore if acelera$ultimo_ano == 1  [aw = _weight],  lw(1.5) lp(dash) color(red) 				///
 							///
-							|| kdensity _pscore if acelera2014 == 1  [aw = _weight],  lw(thick) lp(dash) color(gs12) 			///
+							|| kdensity _pscore if acelera$ultimo_ano == 1  [aw = _weight],  lw(thick) lp(dash) color(gs12) 			///
 							graphregion(color(white) fcolor(white) lcolor(white) icolor(white) ifcolor(white) ilcolor(white)) 	///
 							plotregion(color(white) fcolor(white) lcolor(white) icolor(white) ifcolor(white) ilcolor(white)) 	///
 							ylabel(, labsize(small) angle(horizontal) format(%2.1fc)) 											///
@@ -493,17 +492,16 @@
 					graphregion(color(white) fcolor(white) lcolor(white) icolor(white) ifcolor(white) ilcolor(white)) 	///
 					plotregion(color(white) fcolor(white) lcolor(white) icolor(white) ifcolor(white) ilcolor(white)) 	///
 					ylabel(, labsize(medsmall) format(%2.1fc)) 															///
-					xlabel(-3(1)2, labsize(medsmall) gmax angle(horizontal)) 											///
+					xscale(r(-3(1)3)) ///
+					xlabel(-3 `" "3 years" "ago" "' -2 `" "2 years" "ago" "' -1 `" "1 year" "ago" "' 0 `" "Intervention" "' 1 `" "1 year" "after" "' 2 `" "2 years" "after "', labsize(medsmall) gmax angle(horizontal)) 	///																							///
 					yscale(alt)																							///
 					ytitle("Difference in grade-promotion, in pp", size(medsmall))			 							///
 					xtitle("") 																							///
 					title("`title'", pos(12) size(medsmall)) 															///
 					subtitle(, pos(12) size(medsmall)) 																	///
-					text(-2 0.2 "Intervention", size(vsmall))														///
 					ysize(5) xsize(7) 						///
 					legend(order(1 "Before intervention" 2 "During and after intervention") pos(6) size(medsmall) region(lwidth(none) color(none))))  		
 					graph export "$figures/Figure1.pdf", as(pdf) replace	
-
 				}
 				else
 				{
@@ -550,7 +548,7 @@
 		{		
 		estimates clear
 		
-		foreach outcome in approved  dropped {  //dropped 
+		foreach outcome in approved  dropped dist_1mais {  //dropped 
 			
 			local i = 1
 			

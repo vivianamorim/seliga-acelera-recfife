@@ -43,9 +43,11 @@
 	
 	estimates clear
 
-	foreach sub in  1 2  { //2 3 4
+	foreach sub in  1 2 3 4 { //2 3 4
 	
 		use 	"$dtfinal/SE LIGA & Acelera_Recife.dta", clear
+		replace insuf_mat = insuf_mat*100
+		replace insuf_port = insuf_port*100
 
 			**
 			*Preparing data
@@ -223,7 +225,7 @@
 						{
 							if `amostra' == 1 & `sub' == 1 {
 							global balance_test distorcao approved repeated prof_LP3ano prof_MT3ano pulou2_program3
-							*iebaltab $balance_test if grade == 3, grpvar(acelera2018) format(%12.2fc) fixedeffect(year)   save("$tables/balance-fourth-grade.xls") rowvarlabels replace 
+							iebaltab $balance_test if grade == 3, grpvar(acelera2018) format(%12.2fc) fixedeffect(year)   save("$tables/balance-thirdgraders.xls") rowvarlabels replace 
 							}
 						}
 						
@@ -295,8 +297,8 @@
 				}	
 		}			
 		
-				estout test01 test11 test01mat test11mat  test02 test12 test02mat test11mat using "$tables/Table.xls",  keep(d_acelera*)  cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 space unique_treat outcome_treat sd_treat space unique_control outcome_control unique_school  , labels("Obs" "R2" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" " Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) replace
-
+		estout test01 test11 test01mat test11mat  test02 test12 test02mat test11mat using "$tables/Table.xls",  keep(d_acelera*)  cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 space unique_treat outcome_treat sd_treat space unique_control outcome_control unique_school  , labels("Obs" "R2" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" " Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) replace
+		estout test03 test13 test03mat test13mat  test04 test14 test04mat test14mat using "$tables/Table.xls",  keep(d_acelera*)  cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 space unique_treat outcome_treat sd_treat space unique_control outcome_control unique_school  , labels("Obs" "R2" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" " Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) append
 				
 				/*
 		estout * using "$tables/Table.xls",  keep(d_acelera*)  cells(b(star fmt(2)) se(par(`"="("' `")""') fmt(2))  ci(par)) starlevels(* 0.10 ** 0.05 *** 0.01) stats(N r2 space unique_treat outcome_treat sd_treat space unique_control outcome_control unique_school  , labels("Obs" "R2" "Treated Group" "Students" "Mean outcome" "SD" "ATT in sd" " Comparison Group" "Students" "Mean outcome"  "Num. schools") fmt(%9.0g %9.2f %9.2f)) replace
